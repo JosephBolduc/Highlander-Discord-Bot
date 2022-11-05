@@ -1,11 +1,9 @@
 import json
 class Player():
-    def __init__(self, name, aliases, classes, leagues, roles):
+    def __init__(self, name, roles, aliases):
         self.name = name       # String for their discord uID
         self.aliases = aliases # List of aliases that can be added by the person or admin
-        self.classes = classes # List that contains strings "Scout", "Soldier", etc...
-        self.leagues = leagues # List that contains strings "UGC", "RGL", or is empty
-        self.roles = roles     # List that contains strings "MailCall", "Starter", "Alternate", "Mentor"
+        self.roles = roles     # List that contains the players server roles
 
     def jsonify(self):
         return json.dumps(self.__dict__)
@@ -18,16 +16,8 @@ class Player():
             result += item + ", "
         result += "\n"
 
-        result += "Classes: "
-        for item in self.classes:
-            result += item + ", "
-        result += "\n"
-
-        result += "Leagues: "
-        for item in self.leagues:
-            result += item + ", "
-        result += "\n"
-
         result += "Other Roles: "
         for item in self.roles:
             result += item + ", "
+
+        return str(result)
