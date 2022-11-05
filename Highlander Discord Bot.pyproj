@@ -42,10 +42,16 @@
     <Content Include="credentials.json" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="HelperFunctions.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Player.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="main.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ShelveDB.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
