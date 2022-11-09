@@ -45,5 +45,6 @@ def pushDB(copyDB):
 				db[key] = copyDB[key]
 			print("Wrote", db["name"], "to disk")
 
-	except:
+	except Exception as e:
 		print("Failed to write", copyDB["name"], "to disk!")
+		print(e)

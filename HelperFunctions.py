@@ -1,7 +1,10 @@
 # Random Helper Functions
 
-def idToPingableString(id):
-	response = "<@" + str(id) + ">"
+def idToPingableString(id, idType="user"):
+	if idType == "user":
+		response = "<@" + str(id) + ">"
+	else:
+		response = "<&@" + str(id) + ">"
 	return response
 
 

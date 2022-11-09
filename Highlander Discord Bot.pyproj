@@ -40,8 +40,18 @@
   <ItemGroup>
     <Content Include="credentials-example.json" />
     <Content Include="credentials.json" />
+    <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChatReactions.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Event.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="EventThread.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="HelperFunctions.py">
       <SubType>Code</SubType>
     </Compile>

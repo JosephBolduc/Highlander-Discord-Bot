@@ -1,19 +1,28 @@
-#Credit to realpython for starting out the bot
+# Credit to realpython for starting out the bot
+
+# discord.py
 import discord
 from discord.ext import commands
 
+# reading credentials.json
 from pathlib import Path
 import json
 
+# "database" and structure
 from ShelveDB import *        # Database, what for?
 from Player import Player     # Database architecture, what for?
+from Event import Event
+
+# random functions/cogs
 from HelperFunctions import *
+from ChatReactions import ChatReactions
+
+# event loop code
+from EventThread import EventThread
 
 
-# Initializing random stuff
-
-# Just open and close DBs as needed
-#activeServerDBs = {} # Server databases currently checked out through Shelve {Key : Object} => {Server : Dict}
+eventThread = None
+eventList = {}			# joseph 2nd worst piece of code 2022 award goes here
 openSecretChannels = [] # Opened secret channels
 
 
@@ -35,6 +44,8 @@ bot = commands.Bot(command_prefix='tf_', intents = intents)
 @bot.event
 async def on_ready():
 	await trimOldChannels()
+	setupTimeThread()
+	await bot.add_cog(ChatReactions(bot))
 	status = discord.Status.do_not_disturb
 	game = discord.CustomActivity("Currently under construction...")
 	await bot.change_presence(status=status, activity=game)
@@ -57,6 +68,77 @@ async def on_command_error(ctx, error):
 
 # Bot Commands 
 
+# Command implicitly takes the args of the event name, role to add to roster, and the date
+@bot.command("create_event", help="Creates an event, takes arguments in the form \"Event name @roleToAddToRoster HH:MM DD/MM/YYYY\" ")
+async def create_event(ctx):
+	inputString = str(ctx.message.content)
+	inputString = inputString[16:]
+
+	eventName = ""
+	roleID = ""
+	dateString = ""
+	stringBuilder = ""
+
+	# Searches input string for @everyone to add everyone to the server
+	if inputString.find("@everyone") > -1:
+		await ctx.send("Found @everyone, will implement later...")
+		return None
+
+	for index in range(0, len(inputString)):
+		currentChar = inputString[index]
+
+		# Finds the start of the discord role id and flushes stringBuilder to eventName
+		if currentChar == "<":
+			if inputString[index+1] == "@":
+				eventName = stringBuilder[0:-1]
+				stringBuilder = ""
+		
+		# Finds the end of the discord role id and flushes stringBuilder to roleID
+		if currentChar == ">":
+			roleID = stringBuilder[3:]
+			stringBuilder = ""
+
+		# Empties the last of stringBuilder, which should only be the date, into datestring
+		stringBuilder += currentChar
+	dateString = stringBuilder[2:]
+
+	roster = []
+
+	for user in ctx.guild.members:
+		for userRole in user.roles:
+			if int(userRole.id) == int(roleID):
+				roster.append(user.id)
+
+	activeDB = pullDB(ctx.guild.name)
+
+	eventObject = Event(eventName, roster, dateString, ctx.guild.id)
+	activeDB["events"].update({eventName : eventObject})
+	eventList.update({eventObject.eventName : eventObject})
+
+	pushDB(activeDB)
+	response = "Added " + str(len(roster)) + " players to roster"
+	await ctx.send(response)
+
+
+# Command implicitly takes the username of a users scheduled games, if any passed, and prints their schedule
+@bot.command(name="view_schedule")
+async def view_schedule(ctx):
+	inputString = str(ctx.message.content)
+	# Command when no implicit argument
+	if len(inputString) == 16:
+		response = "There are currently " + str(len(eventList)) + " matches scheduled:"
+		await ctx.send(response)
+		for event in eventList.keys():
+			eventObject = eventList[event]
+			response = event + "on " + str(eventObject.time)
+			await ctx.send(response[0:-3])
+
+
+	# Command when implicit argument
+	else:
+		pass
+
+
 @bot.command(name="add_server_to_db")
 async def add_server_to_db(ctx):
 	DBname = str(ctx.guild)
@@ -64,8 +146,6 @@ async def add_server_to_db(ctx):
 	if activeDB == None:
 		await ctx.send("Failed to construct DB")
 		return None
-
-	print(activeDB)
 
 	for member in ctx.guild.members:
 		if member != bot.user:
@@ -75,44 +155,6 @@ async def add_server_to_db(ctx):
 	await ctx.send("Finished processing server users...\nDB entries:")
 	await ctx.send(activeDB)
 	pushDB(activeDB)
-	
-
-@bot.command(name="addSelfToJSON")
-async def addSelfToJSON(ctx):
-	name = str(ctx.author)
-	aliases = [ctx.author.display_name]
-	roles = []
-
-	for item in ctx.author.roles:
-		if item.name != "@everyone":
-			roles.append(str(item.name))
-
-	userObject = createUserObject(name, aliases, roles) # Function does the role sorting
-   
-	await ctx.send("Player object:\n" + userObject.__str__())
-	await ctx.send("Database entry:\n" + userObject.jsonify())
-
-
-@bot.command(name="addAllToJSON")
-async def addAllToJSON(ctx):
-	serverUserObjects = []
-
-	serverMembers = ctx.guild.members
-	for member in serverMembers:
-		if member != bot.user:
-			name = str(member)
-			aliases = [member.display_name]
-			roles = []
-
-			for item in member.roles:
-				if item.name != "@everyone":
-					roles.append(str(item.name))
-			serverUserObjects.append(createUserObject(name, aliases, roles)) # Function does the role sorting
-
-	await ctx.send("Finished processing server users...\nDB entries:")
-	
-	for item in serverUserObjects:
-		await ctx.send(str(item.jsonify()))
 	
 
 @bot.command(name='get_status', help='returns the status of the bot')
@@ -189,7 +231,20 @@ async def trimOldChannels():
 					total += 1
 	print("Finished trimming", total, "leftover channels")
 
+def setupTimeThread():
+	for guild in bot.guilds:
+		activeDB = pullDB(guild.name)
+		print(guild.name, "'s Database\n", activeDB)
+		for event in activeDB["events"]:
+			eventList.update({event : activeDB["events"][event]})
+
+
+	eventThread = EventThread(bot, eventList)
+	eventThread.start()
+	print(eventList)
+
 
 
 # Runner
+
 bot.run(tokenFile["token"])
