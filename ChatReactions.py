@@ -5,7 +5,7 @@ import random
 class ChatReactions(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.bombs = ["bomb", "explosive", "explode", "c4", "payload cart"]
+        self.bombs = ["bomb", "explosive", "explode", "c4", "payload"]
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -34,11 +34,14 @@ class ChatReactions(commands.Cog):
 
         response += maps[random.randint(0, len(maps) - 1)] + " but instead I push the " + cart[random.randint(0, len(cart) - 1)] + " into your house."
 
+        # 1 in 2 chance for the message to be in all lower case
         if random.randint(1,2) == 1:
             response = response.lower()
+            # 1 in 2 chance that the period is dropped from the end
             if random.randint(1,2) == 1:
                 response = response[0:-1]
 
+        # 1 in 40 chance for the message to be in all caps
         elif random.randint(1,40) == 1:
             response = response.upper()
 

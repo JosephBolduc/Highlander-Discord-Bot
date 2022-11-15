@@ -26,7 +26,7 @@ eventList = {}			# joseph 2nd worst piece of code 2022 award goes here
 openSecretChannels = [] # Opened secret channels
 
 
-# Gets discord and firebase credentials
+# Gets discord credentials
 cwd = Path(__file__).parents[0]
 cwd = str(cwd)
 print(f"{cwd}\n-----")
@@ -44,7 +44,7 @@ bot = commands.Bot(command_prefix='tf_', intents = intents)
 @bot.event
 async def on_ready():
 	await trimOldChannels()
-	setupTimeThread()
+	#setupTimeThread()
 	await bot.add_cog(ChatReactions(bot))
 	status = discord.Status.do_not_disturb
 	game = discord.CustomActivity("Currently under construction...")
@@ -67,6 +67,23 @@ async def on_command_error(ctx, error):
 
 
 # Bot Commands 
+
+# Command implicitly takes the args of the event name, role to add to roster, and the date
+@bot.command("notify_wip", help="pings all players with the role")
+async def notify_wip(ctx, toSend, role):
+	quickRoster = []
+	for user in ctx.guild.members:
+		for userRole in user.roles:
+			if int(userRole.id) == int(role[3:-1]):
+				quickRoster.append(user)
+	
+	print(quickRoster)
+	for player in quickRoster:
+		await createRSVP(ctx, player, toSend)
+
+	response = "Notified " + str(len(quickRoster)) + " players"
+	await ctx.send(response)
+
 
 # Command implicitly takes the args of the event name, role to add to roster, and the date
 @bot.command("create_event", help="Creates an event, takes arguments in the form \"Event name @roleToAddToRoster HH:MM DD/MM/YYYY\" ")
@@ -169,11 +186,10 @@ async def create_channel(ctx, channel_name):
 	existing_channel = discord.utils.get(guild.channels, name=channel_name)
 	if not existing_channel:
 		print(f'Creating a new channel: {channel_name}')
-		await guild.create_text_channel(channel_name)
+		return await guild.create_text_channel(channel_name)
 
 
 @bot.command(name="say")
-@commands.has_role('sex')
 async def say(ctx, message: str):
 	guild = ctx.guild
 	general = discord.utils.get(guild.channels, name="general")
@@ -189,11 +205,12 @@ async def encourage(ctx, user: str):
 
 
 @bot.command(name="create_rsvp")
-async def createRSVP(ctx, username):
+async def createRSVP(ctx, username, message):
 	user = await findPlayer(ctx, username)
 	if user == None:
 		return None
-	await rsvpForMatch(ctx, user)
+	channel = await rsvpForMatch(ctx, user)
+	await channel.send(message)
 	response = "Created RSVP channel for " + idToPingableString(user.id)
 	await ctx.send(response)
 
@@ -204,6 +221,17 @@ async def resolvePlayer(ctx, name):
 	if response != None:
 		await ctx.send(response)
 
+
+@bot.command(name="start_thread")
+async def startThread(ctx):
+	setupTimeThread()
+	await ctx.send("Started event thread")
+
+
+@bot.command(name="kill_thread")
+async def killThread(ctx):
+	eventList.update({"kill" : None})
+	await ctx.send("Killed event thread")
 
 # Helper Functions
 
@@ -218,6 +246,7 @@ async def rsvpForMatch(ctx, user):
 	everyone = ctx.guild.roles[0]
 	await channel.set_permissions(everyone, view_channel=False)
 	await channel.set_permissions(user, view_channel=True)
+	return channel
 
 
 async def trimOldChannels():
