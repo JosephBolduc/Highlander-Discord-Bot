@@ -1,1 +1,2 @@
 # Highlander Discord Bot
+discord
