@@ -19,6 +19,10 @@ class ChatReactions(commands.Cog):
 			"tannerite",
 			"academy sports and outdoors",
 		]
+		self.targetedUsers = [
+			254661838497644544,
+			241958250931683329
+		]
 
 	@commands.Cog.listener()
 	async def on_message(self, message):
@@ -39,8 +43,8 @@ class ChatReactions(commands.Cog):
 			await message.reply(self.trollingStone())
 			return None
 
-		if message.author.id == 254661838497644544:
-			if random.randint(1,15) == 1:
+		if message.author.id in self.targetedUsers:
+			if random.randint(1,5) == 1:
 				await message.channel.send(self.randomReactGif())
 				return None
 
