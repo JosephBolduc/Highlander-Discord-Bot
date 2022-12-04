@@ -8,6 +8,9 @@ from discord.ext import commands
 from pathlib import Path
 import json
 
+# otherwise reading the token from path
+import os
+
 # "database" and structure
 from ShelveDB import *        # Database, what for?
 from Player import Player     # Database architecture, what for?
@@ -30,8 +33,13 @@ openSecretChannels = [] # Opened secret channels
 cwd = Path(__file__).parents[0]
 cwd = str(cwd)
 print(f"{cwd}\n-----")
-tokenFile = json.load(open(cwd+"/credentials.json"))
-
+try:
+	tokenFile = json.load(open(cwd+"/credentials.json"))
+	token = tokenFile["token"]
+	print("Read token from file")
+except:
+	token = os.environ.get("DISCORD_TOKEN")
+	print("Read token from environment")
 
 # Sets up bot
 intents = discord.Intents.all()
@@ -276,4 +284,4 @@ def setupTimeThread():
 
 # Runner
 
-bot.run(tokenFile["token"])
+bot.run(token)
