@@ -195,6 +195,11 @@ async def say(ctx, message: str):
 	general = discord.utils.get(guild.channels, name="general")
 	await general.send(message)
 
+@bot.command(name="img")
+async def imgSend(ctx, fileName):
+	guild = ctx.guild
+	general = discord.utils.get(guild.channels, name="general")
+	await general.send(file=discord.File(fileName))
 
 @bot.command(name="encourage")
 async def encourage(ctx, user: str):
